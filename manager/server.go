@@ -16,32 +16,63 @@ import (
 	"encoding/json"
 )
 
-type ConClient struct {
-	Encoder  *gob.Encoder
-	Decoder  *gob.Decoder
-	Conn     net.Conn
-	Client   *model.Client
-	Accepted bool
+type ConnectEntry struct {
+	Conn   net.Conn
+	Serial string
 }
 
-func (c *ConClient) handlerConn() {
-	defer c.Close()
-	d := gob.NewDecoder(c.Conn)
+type ServerController struct {
+	Service *Service
+	Conns   map[string]net.Conn
+	Client  map[string]*model.Client
+}
+
+var sc *ServerController
+
+func SC() *ServerController {
+	if sc == nil {
+		sc = &ServerController{NewService(), make(map[string]net.Conn), make(map[string]*model.Client)}
+	}
+	return sc
+}
+
+func (sc *ServerController) Serve() {
+	x, _ := net.ResolveTCPAddr("tcp", ":4040")
+	sl, err := net.ListenTCP("tcp", x)
+	if err != nil {
+		panic(err)
+	}
 	for {
-		log.Println("解码")
+		conn, err := sl.Accept()
+		if err != nil {
+			log.Println("连接失败", err)
+			continue
+		}
+
+		var c ConnectEntry
+		c.Conn = conn
+		go c.handlerConn(conn)
+	}
+}
+
+func (c *ConnectEntry) handlerConn(conn net.Conn) {
+	defer c.Close()
+	d := gob.NewDecoder(conn)
+	for {
 		var data Pocket
 		if err := d.Decode(&data); err != nil {
 			log.Println("解码失败", err)
 			return
 		} else {
+
 			go c.handlerReceive(data)
 		}
 	}
 }
 
-func (c *ConClient) handlerReceive(rec Pocket) {
+func (c *ConnectEntry) handlerReceive(rec Pocket) {
 	log.Println(rec)
-	if !c.Accepted {
+	if len(c.Serial) != 25 {
 		// 未授权先授权
 		switch rec.Code {
 		case CodeReg:
@@ -57,12 +88,12 @@ func (c *ConClient) handlerReceive(rec Pocket) {
 			session := model.DB().Begin()
 			if err := ct.Create(session); err != nil {
 				session.Rollback()
-				c.Encoder.Encode(Pocket{CodeError, err.Error()})
+				c.SendData(Pocket{CodeError, err.Error()})
 				c.Close()
 			} else {
-				if err := c.Encoder.Encode(Pocket{CodeRegSuccess, serial + "#" + pass}); err != nil {
+				if err := c.SendData(Pocket{CodeRegSuccess, serial + "#" + pass}); err != nil {
 					session.Rollback()
-					log.Println(err)
+					panic(err)
 					c.Close()
 				}
 				session.Commit()
@@ -75,46 +106,52 @@ func (c *ConClient) handlerReceive(rec Pocket) {
 			ct.Serial = data[0]
 			ct.Pass = data[1]
 			if ct.Get() != nil {
-				c.Encoder.Encode(Pocket{CodeError, "Error serial or pass"})
+				c.SendData(Pocket{CodeError, "Error serial or pass"})
 				return
 			}
 			ct.Online = true
-			c.Accepted = true
 			ct.LastActive = time.Now()
 			ct.Update(model.DB())
-			c.Client = &ct
-			c.Encoder.Encode(Pocket{CodeLoginSuccess, "Login success"})
+			// 更新连接状态
+			SC().Conns[ct.Serial] = c.Conn
+			SC().Client[ct.Serial] = &ct
+			c.Serial = ct.Serial
+			c.SendData(Pocket{CodeLoginSuccess, "Login success"})
 			break
 		default:
 			// 需要登录
-			c.Encoder.Encode(Pocket{CodeNeedLogin, ""})
+			c.SendData(Pocket{CodeNeedLogin, ""})
 		}
 	} else {
 		// 授权后操作
 		switch rec.Code {
 		case CodeUpdateForwardCTable:
 			// 更新转发表
-			var tunnels []model.Tunnel
-			if model.DB().Model(c.Client).Related(&tunnels, "client_serial").Error != nil {
+			client, _ := SC().Client[c.Serial]
+			if err := model.DB().Model(client).Related(&client.Tunnels, "client_serial").Error; err != nil {
+				log.Println("获取转发表", err)
 				return
 			}
-			data, err := json.Marshal(tunnels)
+			data, err := json.Marshal(client.Tunnels)
 			if err != nil {
+				log.Println("序列化", err)
 				return
 			}
-			c.Encoder.Encode(Pocket{CodeUpdateForwardCTable, string(data)})
+			c.SendData(Pocket{CodeUpdateForwardCTable, string(data)})
 			break
 		default:
-			c.Encoder.Encode(Pocket{CodeNeedLogin, "Error code"})
+			c.SendData(Pocket{CodeNeedLogin, "Error code"})
 		}
 	}
 }
 
-func (c *ConClient) Close() {
-	log.Println("断开链接", c.Client, c.Conn.RemoteAddr())
-	c.Accepted = false
-	c.Client.LastActive = time.Now()
-	c.Client.Online = false
-	c.Client.Update(model.DB())
+func (c *ConnectEntry) SendData(data Pocket) error {
+	return gob.NewEncoder(c.Conn).Encode(data)
+}
+
+func (c *ConnectEntry) Close() {
+	log.Println("断开链接", c.Serial, c.Conn.RemoteAddr())
+	delete(SC().Client, c.Serial)
+	delete(SC().Conns, c.Serial)
 	c.Conn.Close()
 }

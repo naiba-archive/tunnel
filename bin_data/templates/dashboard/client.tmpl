@@ -1,0 +1,70 @@
+{{define "dashboard/client"}}
+{{template "common/header" .}}
+<div class="ui two column centered middle aligned grid" style="height: 100%">
+    <div class="center aligned column">
+        <h2 class="ui teal image header">
+            <div class="content">
+                Client Management
+            </div>
+        </h2>
+        <div class="ui error message hidden"></div>
+        <div class="ui stacked segment left aligned">
+            <table class="ui celled table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>内网地址</th>
+                    <th>公网地址</th>
+                    <th>创建时间</th>
+                    <th>管理</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <form method="get">
+                        <td>ID</td>
+                        <td>
+                            <div class="ui transparent input">
+                                <input name="act" value="add" type="hidden">
+                                <input style="width: 160px" name="local" type="text" placeholder="输入内网地址">
+                            </div>
+                        </td>
+                        <td>tun.cx:5555</td>
+                        <td>2018-01-01 08:00</td>
+                        <td class="center aligned">
+                            <button class="ui mini button"><i class="icon add"></i> 添加</button>
+                        </td>
+                    </form>
+                </tr>
+                {{range $tunnel := .Client.Tunnels}}
+                <tr>
+                    <form method="get">
+                        <td>{{$tunnel.ID}}</td>
+                        <td>
+                            <div class="ui transparent left icon input">
+                                <i class="edit icon"></i>
+                                <input name="id" type="hidden" value="{{$tunnel.ID}}">
+                                <input name="act" value="update" type="hidden">
+                                <input name="stock" style="width: 160px" type="text" placeholder="输入内网地址"
+                                       value="{{$tunnel.LocalAddr}}">
+                            </div>
+                        </td>
+                        <td>tun.cx:{{$tunnel.OpenAddr}}</td>
+                        <td>{{FormatTime $tunnel.CreatedAt}}</td>
+                        <td class="center aligned">
+                            <div class="ui mini buttons">
+                                <button type="submit" class="ui button">更新</button>
+                                <div class="or"></div>
+                                <a href="?act=delete&id={{$tunnel.ID}}" class="ui button">删除</a>
+                            </div>
+                        </td>
+                    </form>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{template "common/footer" .}}
+{{end}}

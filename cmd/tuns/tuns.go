@@ -8,9 +8,10 @@ package main
 import (
 	"github.com/urfave/cli"
 	"os"
-	"log"
 	"git.cm/naiba/tunnel/manager"
 	"git.cm/naiba/tunnel/model"
+	"git.cm/naiba/tunnel"
+	"git.cm/naiba/tunnel/cmd/web"
 )
 
 func main() {
@@ -24,6 +25,7 @@ func main() {
 			Name: "web",
 		},
 	}
+	c.Version = tunnel.ServerVersion
 	c.Action = handlerCMD
 
 	if err := c.Run(os.Args); err != nil {
@@ -33,9 +35,13 @@ func main() {
 
 func handlerCMD(ctx *cli.Context) {
 	if ctx.Bool("web") {
-		log.Println("web")
+		go web.RunServer()
 	}
-	go manager.Start()
+	go manager.SC().Serve()
+	service := manager.NewService()
+	var ts []model.Tunnel
+	model.DB().Model(model.Tunnel{}).Find(&ts)
+	service.Update(ts, service.ServeOpenAddr)
 	select {}
 }
 

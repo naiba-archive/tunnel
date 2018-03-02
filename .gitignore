@@ -3,3 +3,4 @@ cmd/tunc/nb.ini
 cmd/tunc/tunc
 cmd/tuns/NB.db
 cmd/tuns/tuns
+cmd/tuns/bin_data

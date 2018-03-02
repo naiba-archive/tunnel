@@ -8,11 +8,14 @@ package main
 import (
 	"git.cm/naiba/tunnel/manager"
 	"time"
+	"log"
+	"git.cm/naiba/tunnel"
 )
 
 func main() {
+	log.Println("NB Tun v" + tunnel.ClientVersion)
 	// 连接服务器
-	s := manager.DefaultServer()
+	s := manager.NewClientController()
 	go s.Connect()
 	s.LoadConf()
 	for {
