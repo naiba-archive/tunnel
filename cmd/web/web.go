@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"git.cm/naiba/tunnel"
 	"git.cm/naiba/tunnel/router/dashboard"
+	"git.cm/naiba/tunnel/model"
 )
 
 func RunServer() {
@@ -60,7 +61,7 @@ func RunServer() {
 
 func authRequired(guest, login bool) gin.HandlerFunc {
 	return gin_mod.ToggleAuthOption(&gin_mod.AutoOptions{NeedGuest: guest, NeedLogin: login}, func(ctx *gin.Context) {
-		gin_mod.JSAlertRedirect(i18n.Tr(ctx.MustGet("Lang").(string), "already_login"), "/dashboard", ctx)
+		gin_mod.JSAlertRedirect(i18n.Tr(ctx.MustGet("Lang").(string), "already_login"), "/dashboard/"+ctx.MustGet("loginClient").(*model.Client).Serial, ctx)
 	}, func(ctx *gin.Context) {
 		gin_mod.JSAlertRedirect(i18n.Tr(ctx.MustGet("Lang").(string), "need_login"), "/", ctx)
 	})

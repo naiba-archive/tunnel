@@ -31,7 +31,7 @@ func LoginHandler(ctx *gin.Context) {
 	var cl model.Client
 	cl.Serial = lf.Serial
 	cl.Pass = lf.Password
-	if cl.Get() != nil {
+	if len(cl.Pass) != 16 || cl.Get() != nil {
 		gin_mod.JSAlertRedirect("序列号或密码错误", "", ctx)
 		return
 	}

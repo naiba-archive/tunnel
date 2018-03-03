@@ -15,7 +15,6 @@ type Client struct {
 	Serial     string   `gorm:"PRIMARY_KEY;UNIQUE_INDEX"`
 	Pass       string
 	UserID     string
-	Online     bool
 	Tunnels    []Tunnel `gorm:"foreignkey:ClientSerial"`
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
@@ -27,7 +26,7 @@ func (c *Client) Create(db *gorm.DB) error {
 }
 
 func (c *Client) Get() error {
-	return DB().Where(&c).First(&c).Error
+	return DB().Omit("last_active").First(&c).Error
 }
 
 func (c *Client) Update(db *gorm.DB) error {

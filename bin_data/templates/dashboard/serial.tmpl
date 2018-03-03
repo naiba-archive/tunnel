@@ -1,4 +1,4 @@
-{{define "dashboard/client"}}
+{{define "dashboard/serial"}}
 {{template "common/header" .}}
 <div class="ui two column centered middle aligned grid" style="height: 100%">
     <div class="center aligned column">
@@ -45,7 +45,7 @@
                                 <i class="edit icon"></i>
                                 <input name="id" type="hidden" value="{{$tunnel.ID}}">
                                 <input name="act" value="update" type="hidden">
-                                <input name="stock" style="width: 160px" type="text" placeholder="输入内网地址"
+                                <input name="local" style="width: 160px" type="text" placeholder="输入内网地址"
                                        value="{{$tunnel.LocalAddr}}">
                             </div>
                         </td>

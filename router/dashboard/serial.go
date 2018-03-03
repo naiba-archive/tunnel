@@ -10,10 +10,10 @@ import (
 	"git.cm/naiba/tunnel/pkg/gin-mod"
 	"git.cm/naiba/tunnel/model"
 	"math/rand"
-	"git.cm/naiba/tunnel/manager"
-	"encoding/gob"
 	"encoding/json"
 	"errors"
+	"git.cm/naiba/tunnel/tun"
+	"sync"
 )
 
 func Serial(ctx *gin.Context) {
@@ -33,7 +33,7 @@ func Serial(ctx *gin.Context) {
 		return
 	}
 
-	con, has := manager.SC().Conns[serial]
+	oc, has := tun.OnlineClients[cl.Serial]
 	if !has {
 		gin_mod.JSAlertRedirect("设备不在线，无法管理", "/", ctx)
 		return
@@ -100,16 +100,17 @@ func Serial(ctx *gin.Context) {
 			return
 		}
 		model.DB().Model(cl).Related(&cl.Tunnels, "client_serial")
-		mt, _ := json.Marshal(cl.Tunnels)
+		data, _ := json.Marshal(cl.Tunnels)
 		// 客户端更新
-		gob.NewEncoder(con).Encode(manager.Pocket{manager.CodeUpdateForwardCTable, string(mt)})
+		var wg sync.WaitGroup
+		tun.SendData(oc.C, tun.CodeGetTuns, data, &wg)
 		// 服务端更新
-		manager.SC().Service.Update(cl.Tunnels, manager.SC().Service.ServeOpenAddr)
+		tun.UpdateSTunnels()
 		gin_mod.JSAlertRedirect("操作成功", ctx.GetHeader("Referer"), ctx)
 		return
 	} else {
 		model.DB().Model(cl).Related(&cl.Tunnels, "client_serial")
-		ctx.HTML(200, "dashboard/client", gin_mod.TemplateCommonVar(ctx, gin.H{
+		ctx.HTML(200, "dashboard/serial", gin_mod.TemplateCommonVar(ctx, gin.H{
 			"Title":  "终端管理",
 			"Client": cl,
 		}))
