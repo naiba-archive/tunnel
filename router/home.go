@@ -15,7 +15,41 @@ import (
 )
 
 func Home(ctx *gin.Context) {
-	ctx.HTML(200, "home", gin_mod.TemplateCommonVar(ctx, gin.H{}))
+	clients := map[string]map[string]string{
+		"darwin/amd64": {
+			"file":  "tunc_darwin_amd64",
+			"icon":  "apple",
+			"color": "red",
+		},
+		"linux/386": {
+			"file":  "tunc_linux_386",
+			"icon":  "linux",
+			"color": "red",
+		},
+		"linux/arm": {
+			"file":  "tunc_linux_arm",
+			"icon":  "linux",
+			"color": "red",
+		},
+		"linux/mips": {
+			"file":  "tunc_linux_mips",
+			"icon":  "linux",
+			"color": "red",
+		},
+		"windows/386": {
+			"file":  "tunc_windows_386.exe",
+			"icon":  "windows",
+			"color": "red",
+		},
+		"windows/amd64": {
+			"file":  "tunc_windows_amd64.exe",
+			"icon":  "windows",
+			"color": "red",
+		},
+	}
+	ctx.HTML(200, "home", gin_mod.TemplateCommonVar(ctx, gin.H{
+		"Clients": clients,
+	}))
 }
 
 func LoginHandler(ctx *gin.Context) {
@@ -35,6 +69,7 @@ func LoginHandler(ctx *gin.Context) {
 		gin_mod.JSAlertRedirect("序列号或密码错误", "", ctx)
 		return
 	}
+
 	gin_mod.SetCookie(ctx, "type", "client")
 	gin_mod.SetCookie(ctx, "serial", cl.Serial)
 	gin_mod.SetCookie(ctx, "token", com.MD5(cl.Serial+strconv.Itoa(time.Now().Year())+cl.Pass))

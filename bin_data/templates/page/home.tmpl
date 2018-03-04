@@ -34,7 +34,15 @@
             </div>
         </form>
         <div class="ui stacked segment left aligned">
-            <h2>Download Client</h2>
+        {{range $name,$client := .Clients}}
+            <div class="ui labeled button" style="margin-top: 10px">
+                <div class="ui basic {{$client.color}} button"><i class="{{$client.icon}} icon"></i></div>
+                <a target="_blank" href="/static/clients/{{$client.file}}"
+                   class="ui basic left pointing {{$client.color}} label">
+                {{$name}}
+                </a>
+            </div>
+        {{end}}
         </div>
     </div>
 </div>

@@ -5,3 +5,4 @@ cmd/tunc/NB
 cmd/tuns/NB.db
 cmd/tuns/tuns
 cmd/tuns/bin_data
+bin_data/static/clients
