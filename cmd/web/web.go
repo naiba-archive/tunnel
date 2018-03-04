@@ -56,7 +56,7 @@ func RunServer() {
 		ctx.Redirect(http.StatusMovedPermanently, ctx.GetHeader("Referer"))
 	})
 
-	webEngine.Run(":5555")
+	webEngine.Run("127.0.0.1:8032")
 }
 
 func authRequired(guest, login bool) gin.HandlerFunc {
