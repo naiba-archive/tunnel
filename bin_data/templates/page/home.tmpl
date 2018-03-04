@@ -37,7 +37,7 @@
         {{range $name,$client := .Clients}}
             <div class="ui labeled button" style="margin-top: 10px">
                 <div class="ui basic {{$client.color}} button"><i class="{{$client.icon}} icon"></i></div>
-                <a target="_blank" href="/static/clients/{{$client.file}}"
+                <a target="_blank" href="/static/clients/{{$client.file}}?{{NowMS}}"
                    class="ui basic left pointing {{$client.color}} label">
                 {{$name}}
                 </a>

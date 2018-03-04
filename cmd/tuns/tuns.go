@@ -54,7 +54,7 @@ func handlerCMD(ctx *cli.Context) {
 		go web.RunServer()
 	}
 	Logger.Println(ctx.App.Name)
-	listener, err := kcp.Listen(tunnel.SiteDomain + ":7235")
+	listener, err := kcp.Listen("0.0.0.0:7235")
 	if err != nil {
 		panic(err)
 	}
