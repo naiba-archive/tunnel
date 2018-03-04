@@ -14,7 +14,6 @@ import (
 	"time"
 	"io"
 	"git.cm/naiba/tunnel/model"
-	"strings"
 )
 
 type ClientConnect struct {
@@ -189,12 +188,6 @@ func Listener2Listener(st *STunnel) {
 			log.Println("链接失败,tunnelID:", st.Tunnel.ID, err)
 			return
 		} else {
-			x1 := strings.Split(lConn.RemoteAddr().String(), ":")
-			x2 := strings.Split(OnlineClients[st.Tunnel.ClientSerial].C.RemoteAddr().String(), ":")
-			if x1[0] != x2[0] {
-				log.Println("客户端认证失败,tunnelID:", st.Tunnel.ID, x1[0], x2[0])
-				return
-			}
 			log.Println("[LConnect]", "0.0.0.0:"+strconv.Itoa(st.Tunnel.Port), lConn.RemoteAddr().String())
 		}
 
