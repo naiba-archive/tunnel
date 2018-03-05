@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"git.cm/naiba/tunnel"
 	"strconv"
+	"github.com/xtaci/smux"
 )
 
 var Registered bool
@@ -89,6 +90,13 @@ func main() {
 		wg.Wait()
 		server.Close()
 		logger.Println("[X]服务器断开:", server.RemoteAddr().String())
+		// 关闭所有Tunnel
+		for _, c := range CTunnels {
+			c.RC.Close()
+			c.RC = nil
+			log.Println("[OK CloseTunnel]", c.Tunnel.ID, c.Tunnel.LocalAddr)
+			delete(CTunnels, c.Tunnel.ID)
+		}
 		time.Sleep(time.Second * 3)
 	}
 }
@@ -106,7 +114,11 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 		tun.SendData(cc.C, tun.CodeRegister, []byte{}, cc.W)
 		break
 	case tun.CodeRegister:
-		logger.Println("注册成功", string(data))
+		logger.Println("注册成功")
+		var cl model.Client
+		json.Unmarshal(data, &cl)
+		logger.Println("序列号：", cl.Serial)
+		logger.Println("密码：", cl.Pass)
 		err := ioutil.WriteFile("NB", data, os.ModePerm)
 		if err != nil {
 			panic(err)
@@ -151,112 +163,80 @@ func pingPong(conn net.Conn, wg *sync.WaitGroup) {
 
 func updateCTunnelConnect(ts []model.Tunnel) {
 	// 关闭已删除转发
-DEL:
+DELETED:
 	for id, ct := range CTunnels {
 		for _, t := range ts {
-			if t.ID == id {
-				continue DEL
+			if t.ID == id && t.IsEqual(ct.Tunnel) {
+				continue DELETED
 			}
 		}
 		if ct.RC != nil {
+			log.Println("[OK CloseTunnel]", ct.Tunnel.ID, ct.Tunnel.LocalAddr)
 			ct.RC.Close()
-		}
-		if ct.LC != nil {
-			ct.LC.Close()
+			ct.RC = nil
+			ct = nil
 		}
 		delete(CTunnels, id)
 	}
-	// 更新转发列表
 	for _, t := range ts {
-		// 检查是否有更改
-		if ct, has := CTunnels[t.ID]; has {
-			if ct.Tunnel.IsEqual(t) {
-				continue
+		if _, has := CTunnels[t.ID]; !has {
+			var nt CTunnel
+			nt.Tunnel = t
+			CTunnels[t.ID] = &nt
+			// 转发
+			switch t.Protocol {
+			default:
+				log.Println("[OK PendingCreateTunnel]", nt.Tunnel.ID, nt.Tunnel.LocalAddr)
+				go TCPHost2Host(CTunnels[t.ID])
+				break
 			}
-			ct.LC.Close()
-			ct.RC.Close()
-			ct.Tunnel = t
-		} else {
-			var ct CTunnel
-			ct.Tunnel = t
-			CTunnels[t.ID] = &ct
-		}
-
-		// 转发
-		switch t.Protocol {
-		default:
-			go TCPHost2Host(CTunnels[t.ID])
-			break
 		}
 	}
-}
-
-type Num struct {
-	sync.RWMutex
-	num int
 }
 
 func TCPHost2Host(t *CTunnel) {
-	var n Num
-	n.RWMutex.Lock()
-	// 可支持100人同时在线
-	n.num = 100
-	n.Unlock()
+	rAddr := tunnel.SiteDomain + ":" + strconv.Itoa(t.Tunnel.Port)
 	for {
-
-		n.RWMutex.Lock()
-		if n.num < 0 {
-			n.Unlock()
-			time.Sleep(time.Second)
-			continue
-		} else {
-			n.num -= 1
-			n.Unlock()
-		}
-
-		nt, has := CTunnels[t.Tunnel.ID]
-		if !has || !nt.Tunnel.IsEqual(t.Tunnel) {
-			log.Println("[ClostTunnel]", t.Tunnel.ID, t.Tunnel.LocalAddr)
+		if t == nil {
 			return
 		}
-		var rConn, lConn net.Conn
-		var err error
-		rAddr := tunnel.SiteDomain + ":" + strconv.Itoa(t.Tunnel.Port)
-		for {
-			rConn, err = net.Dial("tcp", rAddr)
-			if err != nil {
-				logger.Println("[Connectfail]", rAddr, err)
-				continue
-			} else {
-				logger.Println("[RConnect]", rConn.RemoteAddr().String(), rConn.LocalAddr().String())
-			}
-			break
+		// 连接远程Tunnel
+		rConn, err := kcp.Dial(rAddr)
+		if err != nil {
+			logger.Println("[Error RemoteTunnelConnect]", rAddr, err)
+			continue
 		}
+		t.RC = rConn
+		// 多路复用
+		mServer, err := smux.Server(rConn, smux.DefaultConfig())
+		if err != nil {
+			mServer.Close()
+			rConn.Close()
+			continue
+		}
+		log.Println("[OK CreateTunnel]", t.Tunnel.ID, t.Tunnel.LocalAddr)
 		for {
-			lConn, err = net.Dial("tcp", t.Tunnel.LocalAddr)
-			if err != nil {
-				logger.Println("[Connectfail]", rConn.LocalAddr().String(), err)
-				if lConn != nil {
-					lConn.Close()
-				}
+			if t.RC == nil {
 				return
-			} else {
-				logger.Println("[LConnect]", lConn.RemoteAddr().String(), lConn.LocalAddr().String())
 			}
-			break
+			mRConn, err := mServer.AcceptStream()
+			if err != nil {
+				log.Println("[Error AcceptStream]", err)
+				time.Sleep(time.Second * 5)
+				continue
+			}
+			go func() {
+				lConn, err := net.Dial("tcp", t.Tunnel.LocalAddr)
+				if err != nil {
+					mRConn.Close()
+					return
+				}
+				var wg sync.WaitGroup
+				wg.Add(2)
+				go tun.IOCopyWithWaitGroup(mRConn, lConn, &wg)
+				go tun.IOCopyWithWaitGroup(lConn, mRConn, &wg)
+				wg.Wait()
+			}()
 		}
-		go handlerConn(rConn, lConn, &n)
 	}
-}
-func handlerConn(rConn net.Conn, lConn net.Conn, num *Num) {
-	var wg sync.WaitGroup
-	logger.Println("[Connected]", rConn.RemoteAddr().String(), lConn.LocalAddr().String())
-	wg.Add(2)
-	go tun.IOCopyWithWaitGroup(rConn, lConn, true, &wg)
-	go tun.IOCopyWithWaitGroup(lConn, rConn, true, &wg)
-	wg.Wait()
-	num.Lock()
-	num.num += 1
-	num.Unlock()
-	logger.Println("[Disconnected]", rConn.RemoteAddr().String(), lConn.LocalAddr().String())
 }

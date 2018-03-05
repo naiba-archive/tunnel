@@ -8,7 +8,7 @@ package tunnel
 import "time"
 
 const ServerDBPath = "NB.db"
-const ServerVersion = "0.11beta"
+const ServerVersion = "0.2.0beta"
 const SiteName = "Tun"
 const SiteDesc = "内网穿透服务"
 const SiteLanguage = "en-US"

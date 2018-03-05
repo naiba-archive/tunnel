@@ -14,6 +14,8 @@ import (
 	"time"
 	"io"
 	"git.cm/naiba/tunnel/model"
+	"github.com/xtaci/kcp-go"
+	"github.com/xtaci/smux"
 )
 
 type ClientConnect struct {
@@ -99,16 +101,15 @@ func SendData(conn net.Conn, what byte, data []byte, wg *sync.WaitGroup) error {
 	return err
 }
 
-func IOCopyWithWaitGroup(remote, local net.Conn, close bool, wg *sync.WaitGroup) {
+func IOCopyWithWaitGroup(remote, local net.Conn, wg *sync.WaitGroup) {
 	io.Copy(remote, local)
-	if close {
-		remote.Close()
-	}
+	remote.Close()
 	wg.Done()
 }
-func UpdateSTunnels() {
+
+func UpdateSTunnels(serial string, del bool) {
 	var ts []model.Tunnel
-	if err := model.DB().Find(&ts).Error; err != nil {
+	if err := model.DB().Model(&model.Client{Serial: serial}).Related(&ts, "client_serial").Error; err != nil {
 		return
 	}
 	//清除取消的转发
@@ -116,32 +117,32 @@ DEL:
 	for id, st := range STunnels {
 		for _, t := range ts {
 			if t.ID == st.Tunnel.ID {
-				continue DEL
+				if !del && t.IsEqual(st.Tunnel) {
+					continue DEL
+				}
 			}
 		}
 		if st.LL != nil {
 			st.LL.Close()
+			st.LL = nil
 		}
 		if st.RL != nil {
 			st.RL.Close()
+			st.RL = nil
 		}
+		log.Println("[OK CloseTunnel]", st.Tunnel.ID, st.Tunnel.LocalAddr)
 		delete(STunnels, id)
 	}
-	for _, t := range ts {
-		if st, has := STunnels[t.ID]; has {
-			if st.Tunnel.IsEqual(t) {
-				continue
-			} else {
-				st.RL.Close()
-				st.LL.Close()
-				STunnels[t.ID].Tunnel = t
+	if !del {
+		for _, t := range ts {
+			if _, has := STunnels[t.ID]; !has {
+				var st STunnel
+				st.Tunnel = t
+				STunnels[t.ID] = &st
+				log.Println("[OK PendingCreateTunnel]", st.Tunnel.ID, st.Tunnel.LocalAddr)
+				go Listener2Listener(STunnels[t.ID])
 			}
-		} else {
-			var st STunnel
-			st.Tunnel = t
-			STunnels[t.ID] = &st
 		}
-		go Listener2Listener(STunnels[t.ID])
 	}
 }
 
@@ -156,51 +157,50 @@ func Listener2Listener(st *STunnel) {
 		log.Println("监听失败,tunnelID:", st.Tunnel.ID, err)
 		return
 	}
-	lAddr, _ := net.ResolveTCPAddr("tcp", "0.0.0.0:"+strconv.Itoa(st.Tunnel.Port))
-	lListener, err := net.ListenTCP("tcp", lAddr)
+	lListener, err := kcp.Listen("0.0.0.0:" + strconv.Itoa(st.Tunnel.Port))
 	if err != nil {
 		log.Println("监听失败,tunnelID:", st.Tunnel.ID, err)
 		return
 	}
 	st.LL = lListener
 	st.RL = rListener
-	log.Println("[OpenTunnel]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
+	log.Println("[OK TunnelBuilded]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
 	for {
 
-		t, has := STunnels[st.Tunnel.ID]
-		if !has || !t.Tunnel.IsEqual(st.Tunnel) {
-			log.Println("[CloseTunnel]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
-			rListener.Close()
-			lListener.Close()
+		if st.LL == nil || st.RL == nil {
 			return
-		}
-
-		rConn, err := rListener.Accept()
-		if err != nil {
-			log.Println("链接失败,tunnelID:", st.Tunnel.ID, err)
-			return
-		} else {
-			log.Println("[RConnect]", "0.0.0.0:"+strconv.Itoa(st.Tunnel.OpenAddr), rConn.RemoteAddr().String())
 		}
 
 		lConn, err := lListener.Accept()
-		if err != nil {
-			log.Println("链接失败,tunnelID:", st.Tunnel.ID, err)
+		sRConn, err2 := smux.Client(lConn, smux.DefaultConfig())
+		if err != nil || err2 != nil {
+			log.Println("Error CreateTunnel:", st.Tunnel.ID, err)
 			return
-		} else {
-			log.Println("[LConnect]", "0.0.0.0:"+strconv.Itoa(st.Tunnel.Port), lConn.RemoteAddr().String())
 		}
+		for {
 
-		go handlerConn(st, rConn, lConn)
+			if st.LL == nil || st.RL == nil {
+				return
+			}
+
+			rConn, err := rListener.Accept()
+			if err != nil {
+				log.Println("Error ConnectTunnel:", err)
+				time.Sleep(time.Second * 5)
+				continue
+			}
+			go func() {
+				sc, err := sRConn.OpenStream()
+				if err != nil {
+					rConn.Close()
+					return
+				}
+				var wg sync.WaitGroup
+				wg.Add(2)
+				go IOCopyWithWaitGroup(sc, rConn, &wg)
+				go IOCopyWithWaitGroup(rConn, sc, &wg)
+				wg.Wait()
+			}()
+		}
 	}
-}
-
-func handlerConn(st *STunnel, rConn net.Conn, lConn net.Conn) {
-	log.Println("[OpenConn]", st.Tunnel.OpenAddr, rConn.RemoteAddr().String(), lConn.RemoteAddr().String())
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go IOCopyWithWaitGroup(rConn, lConn, true, &wg)
-	go IOCopyWithWaitGroup(lConn, rConn, true, &wg)
-	wg.Wait()
-	log.Println("[CloseConn]", st.Tunnel.OpenAddr, rConn.RemoteAddr().String())
 }

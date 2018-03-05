@@ -14,6 +14,7 @@ import (
 	"errors"
 	"git.cm/naiba/tunnel/tun"
 	"sync"
+	"time"
 )
 
 func Serial(ctx *gin.Context) {
@@ -56,6 +57,7 @@ func Serial(ctx *gin.Context) {
 			var t model.Tunnel
 			t.LocalAddr = tl.LocalAddr
 			t.ClientSerial = cl.Serial
+			rand.Seed(time.Now().Unix())
 			t.Port = rand.Intn(10000) + 20000
 			t.OpenAddr = rand.Intn(10000) + 10000
 			if t.Create(model.DB()) != nil {
@@ -105,7 +107,7 @@ func Serial(ctx *gin.Context) {
 		var wg sync.WaitGroup
 		tun.SendData(oc.C, tun.CodeGetTuns, data, &wg)
 		// 服务端更新
-		tun.UpdateSTunnels()
+		tun.UpdateSTunnels(cl.Serial, false)
 		gin_mod.JSAlertRedirect("操作成功", ctx.GetHeader("Referer"), ctx)
 		return
 	} else {

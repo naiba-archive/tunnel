@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli"
 	"os"
 	"git.cm/naiba/tunnel/model"
-	"git.cm/naiba/tunnel/cmd/web"
+	"git.cm/naiba/tunnel/web"
 	"git.cm/naiba/tunnel"
 	"log"
 	"github.com/xtaci/kcp-go"
@@ -60,8 +60,6 @@ func handlerCMD(ctx *cli.Context) {
 	}
 	// 检测客户端在线
 	go checkPingPong()
-	// 更新端口
-	go tun.UpdateSTunnels()
 	// 接入客户端
 	for {
 		conn, err := listener.Accept()
@@ -84,6 +82,8 @@ func handlerCMD(ctx *cli.Context) {
 				model.DB().Model(&model.Client{Serial: cc.ID}).Update("last_active", time.Now())
 			}
 			Logger.Println("[X]客户端断开:", cc.ID, conn.RemoteAddr().String())
+			// 断开客户端相关连接
+			tun.UpdateSTunnels(cc.ID, true)
 		}()
 	}
 }
@@ -109,8 +109,6 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 		}
 		break
 	case tun.CodePingPong:
-		// 心跳包
-		//Logger.Println("来自客户端的问候", cc.ID, cc.C.RemoteAddr().String())
 		break
 	case tun.CodeRegister:
 		// 终端注册
@@ -159,6 +157,10 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 		cc.ID = client.Serial
 		// 登陆成功添加到在线列表
 		tun.OnlineClients[cc.ID] = cc
+		// 清除旧链接
+		tun.UpdateSTunnels(cc.ID, true)
+		// 设置新链接
+		tun.UpdateSTunnels(cc.ID, false)
 		break
 	default:
 		tun.SendData(cc.C, tun.CodeError, []byte("非法协议"), cc.W)
