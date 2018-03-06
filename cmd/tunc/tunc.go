@@ -19,6 +19,9 @@ import (
 	"git.cm/naiba/tunnel"
 	"strconv"
 	"github.com/xtaci/smux"
+	"flag"
+	"os/exec"
+	"fmt"
 )
 
 var logger *log.Logger
@@ -31,11 +34,29 @@ type CTunnel struct {
 }
 
 var CTunnels map[uint]*CTunnel
+var goDaemon = flag.Bool("d", false, "添加 -d 后台运行")
 
 func init() {
-	logger = log.New(os.Stdout, "[奶爸] ", log.Lmicroseconds)
+	logger = log.New(os.Stdout, "[奶爸]", log.Lmicroseconds)
 	logger.Println("=== 奶爸 Tunnel Client ===")
 	CTunnels = make(map[uint]*CTunnel)
+
+	if !flag.Parsed() {
+		flag.Parse()
+	}
+	if *goDaemon {
+		args := os.Args[1:]
+		i := 0
+		for ; i < len(args); i++ {
+			if args[i] == "-d" {
+				break
+			}
+		}
+		cmd := exec.Command(os.Args[0], args...)
+		cmd.Start()
+		fmt.Println("[PID]", cmd.Process.Pid)
+		os.Exit(0)
+	}
 }
 
 func main() {

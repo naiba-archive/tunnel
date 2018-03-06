@@ -25,7 +25,7 @@ var Logger *log.Logger
 
 func init() {
 	model.Migrate()
-	Logger = log.New(os.Stdout, "[奶爸] ", log.Lmicroseconds)
+	Logger = log.New(os.Stdout, "[奶爸]", log.Lmicroseconds)
 	tun.OnlineClients = make(map[string]*tun.ClientConnect)
 }
 
