@@ -107,7 +107,7 @@ func Serial(ctx *gin.Context) {
 		var wg sync.WaitGroup
 		tun.SendData(oc.C, tun.CodeGetTuns, data, &wg)
 		// 服务端更新
-		tun.UpdateSTunnels(cl.Serial, false)
+		tun.ServerTunnelHotUpdate(cl.Serial, false)
 		gin_mod.JSAlertRedirect("操作成功", ctx.GetHeader("Referer"), ctx)
 		return
 	} else {

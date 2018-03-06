@@ -79,11 +79,11 @@ func handlerCMD(ctx *cli.Context) {
 			conn.Close()
 			if _, has := tun.OnlineClients[cc.ID]; has {
 				delete(tun.OnlineClients, cc.ID)
+				// 断开客户端相关连接
+				tun.ServerTunnelHotUpdate(cc.ID, true)
 				model.DB().Model(&model.Client{Serial: cc.ID}).Update("last_active", time.Now())
 			}
 			Logger.Println("[X]客户端断开:", cc.ID, conn.RemoteAddr().String())
-			// 断开客户端相关连接
-			tun.UpdateSTunnels(cc.ID, true)
 		}()
 	}
 }
@@ -136,6 +136,7 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 		}
 		cc.ID = client.Serial
 		tun.OnlineClients[cc.ID] = cc
+		tun.ServerTunnelHotUpdate(cc.ID, false)
 		ss.Commit()
 		break
 	case tun.CodeLogin:
@@ -158,9 +159,9 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 		// 登陆成功添加到在线列表
 		tun.OnlineClients[cc.ID] = cc
 		// 清除旧链接
-		tun.UpdateSTunnels(cc.ID, true)
+		tun.ServerTunnelHotUpdate(cc.ID, true)
 		// 设置新链接
-		tun.UpdateSTunnels(cc.ID, false)
+		tun.ServerTunnelHotUpdate(cc.ID, false)
 		break
 	default:
 		tun.SendData(cc.C, tun.CodeError, []byte("非法协议"), cc.W)

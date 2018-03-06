@@ -23,6 +23,7 @@ type ClientConnect struct {
 	C          net.Conn
 	W          *sync.WaitGroup
 	LastActive time.Time
+	Tunnels    map[uint]*STunnel
 }
 type STunnel struct {
 	Tunnel model.Tunnel
@@ -30,7 +31,6 @@ type STunnel struct {
 	RL     net.Listener
 }
 
-var STunnels map[uint]*STunnel              // 穿透中的端口
 var OnlineClients map[string]*ClientConnect // 在线的客户端
 var CodePingPong byte = 0                   //心跳包
 var CodeRegister byte = 1                   //注册设备
@@ -107,14 +107,14 @@ func IOCopyWithWaitGroup(remote, local net.Conn, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func UpdateSTunnels(serial string, del bool) {
+func ServerTunnelHotUpdate(serial string, del bool) {
 	var ts []model.Tunnel
 	if err := model.DB().Model(&model.Client{Serial: serial}).Related(&ts, "client_serial").Error; err != nil {
 		return
 	}
 	//清除取消的转发
 DEL:
-	for id, st := range STunnels {
+	for id, st := range OnlineClients[serial].Tunnels {
 		for _, t := range ts {
 			if t.ID == st.Tunnel.ID {
 				if !del && t.IsEqual(st.Tunnel) {
@@ -131,16 +131,16 @@ DEL:
 			st.RL = nil
 		}
 		log.Println("[OK CloseTunnel]", st.Tunnel.ID, st.Tunnel.LocalAddr)
-		delete(STunnels, id)
+		delete(OnlineClients[serial].Tunnels, id)
 	}
 	if !del {
 		for _, t := range ts {
-			if _, has := STunnels[t.ID]; !has {
+			if _, has := OnlineClients[serial].Tunnels[t.ID]; !has {
 				var st STunnel
 				st.Tunnel = t
-				STunnels[t.ID] = &st
+				OnlineClients[serial].Tunnels[t.ID] = &st
 				log.Println("[OK PendingCreateTunnel]", st.Tunnel.ID, st.Tunnel.LocalAddr)
-				go Listener2Listener(STunnels[t.ID])
+				go Listener2Listener(OnlineClients[serial].Tunnels[t.ID])
 			}
 		}
 	}
@@ -195,7 +195,6 @@ func Listener2Listener(st *STunnel) {
 			go func() {
 				sc, err := sRConn.OpenStream()
 				if err != nil {
-					rConn.Close()
 					errOpenStreamRetry++
 					return
 				}
