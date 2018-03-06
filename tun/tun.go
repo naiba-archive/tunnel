@@ -130,7 +130,7 @@ DEL:
 			st.RL.Close()
 			st.RL = nil
 		}
-		log.Println("[OK CloseTunnel]", st.Tunnel.ID, st.Tunnel.LocalAddr)
+		log.Println("[Pending CloseTunnel]", st.Tunnel.ID, st.Tunnel.LocalAddr)
 		delete(OnlineClients[serial].Tunnels, id)
 	}
 	if !del {
@@ -139,7 +139,7 @@ DEL:
 				var st STunnel
 				st.Tunnel = t
 				OnlineClients[serial].Tunnels[t.ID] = &st
-				log.Println("[OK PendingCreateTunnel]", st.Tunnel.ID, st.Tunnel.LocalAddr)
+				log.Println("[Pending CreateTunnel]", st.Tunnel.ID, st.Tunnel.LocalAddr)
 				go Listener2Listener(OnlineClients[serial].Tunnels[t.ID])
 			}
 		}
@@ -164,18 +164,25 @@ func Listener2Listener(st *STunnel) {
 	}
 	st.LL = lListener
 	st.RL = rListener
-	log.Println("[OK TunnelBuilded]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
+	log.Println("[OK CreateTunnel]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
 	for {
 
+		log.Println(st)
+
 		if st.LL == nil || st.RL == nil {
+			log.Println("[OK CloseTunnel]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
 			return
 		}
 
 		lConn, err := lListener.Accept()
+		if err != nil {
+			log.Println("Error CreateTunnel:", st.Tunnel.ID, err)
+			continue
+		}
 		sRConn, err2 := smux.Client(lConn, smux.DefaultConfig())
-		if err != nil || err2 != nil {
-			log.Println("Error CreateTunnel:", st.Tunnel.ID, err, err2)
-			return
+		if err2 != nil {
+			log.Println("Error CreateTunnel:", st.Tunnel.ID, err2)
+			continue
 		}
 		errOpenStreamRetry := 0
 		for {
