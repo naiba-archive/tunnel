@@ -77,9 +77,9 @@ func handlerCMD(ctx *cli.Context) {
 			wg.Wait()
 			conn.Close()
 			if _, has := tun.OnlineClients[cc.ID]; has {
-				delete(tun.OnlineClients, cc.ID)
 				// 断开客户端相关连接
 				tun.ServerTunnelHotUpdate(cc.ID, true)
+				delete(tun.OnlineClients, cc.ID)
 				model.DB().Model(&model.Client{Serial: cc.ID}).Update("last_active", time.Now())
 			}
 			Logger.Println("[X]客户端断开:", cc.ID, conn.RemoteAddr().String())
