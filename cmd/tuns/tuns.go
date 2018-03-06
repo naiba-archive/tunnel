@@ -27,7 +27,6 @@ func init() {
 	model.Migrate()
 	Logger = log.New(os.Stdout, "[奶爸] ", log.Lmicroseconds)
 	tun.OnlineClients = make(map[string]*tun.ClientConnect)
-	tun.STunnels = make(map[uint]*tun.STunnel)
 }
 
 func main() {
