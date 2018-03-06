@@ -218,16 +218,23 @@ func TCPHost2Host(t *CTunnel) {
 			continue
 		}
 		log.Println("[OK CreateTunnel]", t.Tunnel.ID, t.Tunnel.LocalAddr)
+		errAcceptStreamRetry := 0
 		for {
 			if t.RC == nil {
 				return
 			}
+			// 错误次数
+			if errAcceptStreamRetry > 3 {
+				break
+			}
 			mRConn, err := mServer.AcceptStream()
 			if err != nil {
 				log.Println("[Error AcceptStream]", err)
+				errAcceptStreamRetry ++
 				time.Sleep(time.Second * 5)
 				continue
 			}
+			errAcceptStreamRetry = 0
 			go func() {
 				lConn, err := net.Dial("tcp", t.Tunnel.LocalAddr)
 				if err != nil {

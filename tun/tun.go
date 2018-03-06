@@ -177,12 +177,15 @@ func Listener2Listener(st *STunnel) {
 			log.Println("Error CreateTunnel:", st.Tunnel.ID, err)
 			return
 		}
+		errOpenStreamRetry := 0
 		for {
-
 			if st.LL == nil || st.RL == nil {
 				return
 			}
-
+			// 定义OpenStream的错误次数
+			if errOpenStreamRetry > 3 {
+				break
+			}
 			rConn, err := rListener.Accept()
 			if err != nil {
 				log.Println("Error ConnectTunnel:", err)
@@ -193,8 +196,10 @@ func Listener2Listener(st *STunnel) {
 				sc, err := sRConn.OpenStream()
 				if err != nil {
 					rConn.Close()
+					errOpenStreamRetry++
 					return
 				}
+				errOpenStreamRetry = 0
 				var wg sync.WaitGroup
 				wg.Add(2)
 				go IOCopyWithWaitGroup(sc, rConn, &wg)
