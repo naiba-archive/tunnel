@@ -117,6 +117,7 @@ DEL:
 	for id, st := range OnlineClients[serial].Tunnels {
 		for _, t := range ts {
 			if t.ID == st.Tunnel.ID {
+				log.Println(t.IsEqual(st.Tunnel), t.ID)
 				if !del && t.IsEqual(st.Tunnel) {
 					continue DEL
 				}
