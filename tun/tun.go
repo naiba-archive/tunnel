@@ -174,7 +174,7 @@ func Listener2Listener(st *STunnel) {
 		lConn, err := lListener.Accept()
 		sRConn, err2 := smux.Client(lConn, smux.DefaultConfig())
 		if err != nil || err2 != nil {
-			log.Println("Error CreateTunnel:", st.Tunnel.ID, err)
+			log.Println("Error CreateTunnel:", st.Tunnel.ID, err, err2)
 			return
 		}
 		errOpenStreamRetry := 0

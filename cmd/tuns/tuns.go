@@ -157,12 +157,14 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 		tun.SendData(cc.C, tun.CodeLogin, []byte{}, cc.W)
 		cc.ID = client.Serial
 		cc.Tunnels = make(map[uint]*tun.STunnel)
-		// 登陆成功添加到在线列表
-		tun.OnlineClients[cc.ID] = cc
-		// 清除旧链接
-		tun.ServerTunnelHotUpdate(cc.ID, true)
+		if _, has := tun.OnlineClients[client.Serial]; has {
+			// 清除旧链接
+			tun.ServerTunnelHotUpdate(cc.ID, true)
+		}
 		// 设置新链接
 		tun.ServerTunnelHotUpdate(cc.ID, false)
+		// 登陆成功添加到在线列表
+		tun.OnlineClients[cc.ID] = cc
 		break
 	default:
 		tun.SendData(cc.C, tun.CodeError, []byte("非法协议"), cc.W)
