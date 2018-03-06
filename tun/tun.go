@@ -167,8 +167,6 @@ func Listener2Listener(st *STunnel) {
 	log.Println("[OK CreateTunnel]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
 	for {
 
-		log.Println(st)
-
 		if st.LL == nil || st.RL == nil {
 			log.Println("[OK CloseTunnel]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
 			return
@@ -187,15 +185,20 @@ func Listener2Listener(st *STunnel) {
 		errOpenStreamRetry := 0
 		for {
 			if st.LL == nil || st.RL == nil {
+				sRConn.Close()
+				lConn.Close()
+				log.Println("[OK CloseTunnel]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
 				return
 			}
 			// 定义OpenStream的错误次数
 			if errOpenStreamRetry > 3 {
+				sRConn.Close()
+				log.Println("[Error ConnectTunnel]", st.Tunnel.ID, st.Tunnel.OpenAddr, st.Tunnel.LocalAddr)
 				break
 			}
 			rConn, err := rListener.Accept()
 			if err != nil {
-				log.Println("Error ConnectTunnel:", err)
+				log.Println("[Error ConnectTunnel]", err)
 				time.Sleep(time.Second * 5)
 				continue
 			}
