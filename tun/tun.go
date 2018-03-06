@@ -199,7 +199,7 @@ func Listener2Listener(st *STunnel) {
 			rConn, err := rListener.Accept()
 			if err != nil {
 				log.Println("[Error ConnectTunnel]", err)
-				time.Sleep(time.Second * 5)
+				time.Sleep(time.Second * 1)
 				continue
 			}
 			go func() {

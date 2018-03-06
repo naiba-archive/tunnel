@@ -160,6 +160,7 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 		if _, has := tun.OnlineClients[client.Serial]; has {
 			// 清除旧链接
 			tun.ServerTunnelHotUpdate(cc.ID, true)
+			time.Sleep(time.Second * 3)
 		}
 		// 登陆成功添加到在线列表
 		tun.OnlineClients[cc.ID] = cc
