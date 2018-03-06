@@ -21,7 +21,6 @@ import (
 	"github.com/xtaci/smux"
 )
 
-var Registered bool
 var logger *log.Logger
 var loginData []byte
 
@@ -40,34 +39,36 @@ func init() {
 }
 
 func main() {
-	logger.Println(" |- 加载配置文件...")
-	if _, err := os.Stat("NB"); err != nil {
-		if !os.IsNotExist(err) {
-			panic(err)
-		} else {
-			logger.Println(" |- 初次使用注册...")
-		}
-	} else {
-		loginData, err = ioutil.ReadFile("NB")
-		if err != nil {
-			panic(err)
-		}
-		var cl model.Client
-		if json.Unmarshal(loginData, &cl) != nil {
-			logger.Println("[致命错误] 账户信息解析失败")
-			panic(err)
-		}
-		logger.Println(" |========================================")
-		logger.Println(" |- 序列号：" + cl.Serial)
-		logger.Println(" |- 密码：" + cl.Pass)
-		logger.Println(" |========================================")
-		logger.Println(" |- 正在接入云端...")
-		Registered = true
-
-	}
 
 	// 服务器通信
 	for {
+		registered := false
+		logger.Println(" |- 加载配置文件...")
+		if _, err := os.Stat("NB"); err != nil {
+			if !os.IsNotExist(err) {
+				panic(err)
+			} else {
+				logger.Println(" |- 初次使用注册...")
+			}
+		} else {
+			loginData, err = ioutil.ReadFile("NB")
+			if err != nil {
+				panic(err)
+			}
+			var cl model.Client
+			if json.Unmarshal(loginData, &cl) != nil {
+				logger.Println("[致命错误] 账户信息解析失败")
+				panic(err)
+			}
+			logger.Println(" |========================================")
+			logger.Println(" |- 序列号：" + cl.Serial)
+			logger.Println(" |- 密码：" + cl.Pass)
+			logger.Println(" |========================================")
+			logger.Println(" |- 正在接入云端...")
+			registered = true
+
+		}
+
 		server, err := kcp.Dial(tunnel.SiteDomain + ":7235")
 		if err != nil {
 			logger.Println("服务器通信失败，5 秒后重新连接", err)
@@ -82,7 +83,7 @@ func main() {
 		// 建立连接
 		go pingPong(server, &wg)
 		// 注册或登录
-		if Registered {
+		if registered {
 			go login(server, &wg)
 		} else {
 			go tun.SendData(server, tun.CodeRegister, []byte{}, &wg)

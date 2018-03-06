@@ -26,11 +26,11 @@ type Tunnel struct {
 
 func (t *Tunnel) IsEqual(t1 Tunnel) bool {
 	return t.ID == t1.ID &&
-		t.ClientSerial == t.ClientSerial &&
-		t.LocalAddr == t.LocalAddr &&
-		t.Port == t.Port &&
-		t.Protocol == t.Protocol &&
-		t.OpenAddr == t.OpenAddr
+		t.ClientSerial == t1.ClientSerial &&
+		t.LocalAddr == t1.LocalAddr &&
+		t.Port == t1.Port &&
+		t.Protocol == t1.Protocol &&
+		t.OpenAddr == t1.OpenAddr
 }
 
 func (t *Tunnel) Create(db *gorm.DB) error {
