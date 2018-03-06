@@ -63,7 +63,7 @@ func handlerCMD(ctx *cli.Context) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			Logger.Println("客户端接入", err)
+			Logger.Println("[X]客户端接入", err)
 			continue
 		}
 		go func() {
@@ -134,6 +134,7 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 			ss.Rollback()
 		}
 		cc.ID = client.Serial
+		cc.Tunnels = make(map[uint]*tun.STunnel)
 		tun.OnlineClients[cc.ID] = cc
 		tun.ServerTunnelHotUpdate(cc.ID, false)
 		ss.Commit()
@@ -155,6 +156,7 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 		}
 		tun.SendData(cc.C, tun.CodeLogin, []byte{}, cc.W)
 		cc.ID = client.Serial
+		cc.Tunnels = make(map[uint]*tun.STunnel)
 		// 登陆成功添加到在线列表
 		tun.OnlineClients[cc.ID] = cc
 		// 清除旧链接
