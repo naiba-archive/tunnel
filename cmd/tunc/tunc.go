@@ -117,8 +117,11 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 		logger.Println("注册成功")
 		var cl model.Client
 		json.Unmarshal(data, &cl)
-		logger.Println("序列号：", cl.Serial)
-		logger.Println("密码：", cl.Pass)
+		logger.Println(" |========================================")
+		logger.Println(" |- 序列号：" + cl.Serial)
+		logger.Println(" |- 密码：" + cl.Pass)
+		logger.Println(" |========================================")
+		logger.Println(" |- 正在接入云端...")
 		err := ioutil.WriteFile("NB", data, os.ModePerm)
 		if err != nil {
 			panic(err)

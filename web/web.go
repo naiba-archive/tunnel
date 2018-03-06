@@ -22,9 +22,11 @@ func RunServer() {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
+
 	}
 
-	webEngine := gin.Default()
+	webEngine := gin.New()
+	webEngine.Use(gin.Recovery())
 	webEngine.SetFuncMap(gin_mod.TmplFuncMap)
 	webEngine.Static("/static", "bin_data/static")
 	webEngine.LoadHTMLGlob("bin_data/templates/**/*")
