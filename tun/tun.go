@@ -202,18 +202,22 @@ func Listener2Listener(st *STunnel) {
 				time.Sleep(time.Second * 1)
 				continue
 			}
+			log.Println("[OK Vistor connected]", rConn.RemoteAddr().String())
 			go func() {
 				sc, err := sRConn.OpenStream()
 				if err != nil {
 					errOpenStreamRetry++
 					return
 				}
+				log.Println("[OK Tunnel connected]", sc.RemoteAddr().String())
 				errOpenStreamRetry = 0
 				var wg sync.WaitGroup
 				wg.Add(2)
 				go IOCopyWithWaitGroup(sc, rConn, &wg)
 				go IOCopyWithWaitGroup(rConn, sc, &wg)
 				wg.Wait()
+				log.Println("[OK Tunnel closed]", sc.RemoteAddr().String())
+				log.Println("[OK Vistor closed]", rConn.RemoteAddr().String())
 			}()
 		}
 	}

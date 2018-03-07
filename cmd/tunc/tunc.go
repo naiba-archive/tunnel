@@ -258,7 +258,9 @@ func TCPHost2Host(t *CTunnel) {
 			}
 			errAcceptStreamRetry = 0
 			go func() {
+				log.Println("[OK Tunnel connected]", mRConn.RemoteAddr().String())
 				lConn, err := net.Dial("tcp", t.Tunnel.LocalAddr)
+				log.Println("[OK Service connected]", mRConn.RemoteAddr().String())
 				if err != nil {
 					mRConn.Close()
 					return
@@ -268,6 +270,8 @@ func TCPHost2Host(t *CTunnel) {
 				go tun.IOCopyWithWaitGroup(mRConn, lConn, &wg)
 				go tun.IOCopyWithWaitGroup(lConn, mRConn, &wg)
 				wg.Wait()
+				log.Println("[OK Service closed]", mRConn.RemoteAddr().String())
+				log.Println("[OK Tunnel closed]", mRConn.RemoteAddr().String())
 			}()
 		}
 	}
