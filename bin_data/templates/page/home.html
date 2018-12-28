@@ -1,7 +1,7 @@
 {{define "home"}}
 {{template "common/header" .}}
-<div class="ui two column centered middle aligned grid" style="height: 100%">
-    <div class="center aligned column">
+<div class="ui middle aligned center aligned grid" style="height:100%">
+    <div class="column" style="max-width: 700px;">
         <h2 class="ui teal image header">
             <div class="content">
                 Tun Management
@@ -27,8 +27,6 @@
                 </div>
                 <button class="ui fluid large teal submit button">{{T .Site.Language "login"}}</button>
                 <br>
-                <a href="https://pi.tc/oauth/sso?{{NowMS}}" rel="nofollow"
-                   class="ui large teal submit button">{{T .Site.Language "oauth_login"}}</a>
                 <a href="/language/zh-CN?{{NowMS}}" class="ui large teal submit button">切换成中文</a>
                 <a href="/language/en-US?{{NowMS}}" class="ui large teal submit button">Switch to English</a>
             </div>
@@ -37,7 +35,7 @@
         {{range $name,$client := .Clients}}
             <div class="ui labeled button" style="margin-top: 10px">
                 <div class="ui basic {{$client.color}} button"><i class="{{$client.icon}} icon"></i></div>
-                <a target="_blank" href="/static/clients/{{$client.file}}?{{NowMS}}"
+                <a target="_blank" href="/static/{{$client.file}}?{{NowMS}}"
                    class="ui basic left pointing {{$client.color}} label">
                 {{$name}}
                 </a>

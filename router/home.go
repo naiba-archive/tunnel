@@ -27,23 +27,8 @@ func Home(ctx *gin.Context) {
 			"icon":  "linux",
 			"color": "red",
 		},
-		"linux/arm": {
-			"file":  "tunc_linux_arm",
-			"icon":  "linux",
-			"color": "red",
-		},
-		"linux/mips": {
-			"file":  "tunc_linux_mips",
-			"icon":  "linux",
-			"color": "red",
-		},
 		"windows/386": {
 			"file":  "tunc_windows_386.exe",
-			"icon":  "windows",
-			"color": "red",
-		},
-		"windows/amd64": {
-			"file":  "tunc_windows_amd64.exe",
 			"icon":  "windows",
 			"color": "red",
 		},

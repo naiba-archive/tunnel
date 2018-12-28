@@ -13,7 +13,7 @@ const SiteName = "Tun"
 const SiteDesc = "内网穿透服务"
 const SiteLanguage = "en-US"
 
-var SiteDomain = "tun.cx"
+var SiteDomain = "xn--g1ao.com"
 
 var Debug = false
 var Loc *time.Location
@@ -21,6 +21,6 @@ var Loc *time.Location
 func init() {
 	Loc, _ = time.LoadLocation("Asia/Shanghai")
 	if Debug {
-		SiteDomain = "127.0.0.1"
+		SiteDomain = "localhost"
 	}
 }

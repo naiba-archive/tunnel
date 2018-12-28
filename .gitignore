@@ -1,11 +1,11 @@
 .idea/
+NB.db
+NB
 vendor/
 cmd/tunc/nb.ini
 cmd/tunc/tunc_*
 cmd/tunc/tunc
-cmd/tunc/NB
-cmd/tuns/NB.db
 cmd/tuns/tuns
 cmd/tuns/tuns_*
-cmd/tuns/bin_data
-bin_data/static/clients
+bin_data/static/*
+!bin_data/static/.gitkeep
