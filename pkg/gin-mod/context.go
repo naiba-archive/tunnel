@@ -5,12 +5,13 @@
 package gin_mod
 
 import (
-	"github.com/gin-gonic/gin"
+	"strconv"
 	"time"
+
 	"git.cm/naiba/tunnel"
 	"git.cm/naiba/tunnel/model"
-	"git.cm/naiba/com"
-	"strconv"
+	"github.com/gin-gonic/gin"
+	"github.com/naiba/com"
 )
 
 type AutoOptions struct {

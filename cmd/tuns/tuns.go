@@ -6,19 +6,20 @@
 package main
 
 import (
-	"github.com/urfave/cli"
-	"os"
-	"git.cm/naiba/tunnel/model"
-	"git.cm/naiba/tunnel/web"
-	"git.cm/naiba/tunnel"
-	"log"
-	"github.com/xtaci/kcp-go"
-	"git.cm/naiba/tunnel/tun"
-	"sync"
-	"time"
 	"encoding/json"
 	"fmt"
-	"git.cm/naiba/com"
+	"log"
+	"os"
+	"sync"
+	"time"
+
+	"git.cm/naiba/tunnel"
+	"git.cm/naiba/tunnel/model"
+	"git.cm/naiba/tunnel/tun"
+	"git.cm/naiba/tunnel/web"
+	"github.com/naiba/com"
+	"github.com/urfave/cli"
+	"github.com/xtaci/kcp-go"
 )
 
 var Logger *log.Logger
@@ -116,8 +117,8 @@ func handlerReceive(cc *tun.ClientConnect, what byte, data []byte) {
 			return
 		}
 		var client model.Client
-		client.Serial = com.RandString(25)
-		client.Pass = com.RandString(16)
+		client.Serial = com.RandomString(25)
+		client.Pass = com.RandomString(16)
 		client.LastActive = time.Now()
 		ss := model.DB().Begin()
 		if err := client.Create(ss); err != nil {

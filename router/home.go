@@ -6,12 +6,13 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
-	"git.cm/naiba/tunnel/pkg/gin-mod"
-	"git.cm/naiba/tunnel/model"
-	"time"
 	"strconv"
-	"git.cm/naiba/com"
+	"time"
+
+	"git.cm/naiba/tunnel/model"
+	"git.cm/naiba/tunnel/pkg/gin-mod"
+	"github.com/gin-gonic/gin"
+	"github.com/naiba/com"
 )
 
 func Home(ctx *gin.Context) {

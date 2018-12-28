@@ -6,17 +6,15 @@
 package gin_mod
 
 import (
-	"github.com/gin-gonic/gin"
-	"html/template"
-	"time"
-	"strconv"
-	"github.com/Unknwon/i18n"
-	"strings"
 	"fmt"
+	"html/template"
+	"strconv"
+	"strings"
+	"time"
+
 	"git.cm/naiba/tunnel"
-	"os"
-	"log"
-	"path/filepath"
+	"github.com/Unknwon/i18n"
+	"github.com/gin-gonic/gin"
 )
 
 func TemplateCommonVar(ctx *gin.Context, data gin.H) gin.H {
@@ -58,7 +56,7 @@ var TmplFuncMap = template.FuncMap{
 		return t.In(tunnel.Loc).Format("2006-01-02 15:04")
 	},
 	// 乘法
-	"Multi": func(a ... float64) string {
+	"Multi": func(a ...float64) string {
 		total := 1.0000
 		for _, i := range a {
 			total = i * total
@@ -66,7 +64,7 @@ var TmplFuncMap = template.FuncMap{
 		return strconv.FormatFloat(total, 'f', 2, 64)
 	},
 	// 加法
-	"Add": func(a ... float64) string {
+	"Add": func(a ...float64) string {
 		var total float64
 		for _, i := range a {
 			total += i
@@ -87,34 +85,8 @@ var TmplFuncMap = template.FuncMap{
 	// 格式化Float
 	"FormatFloat": func(f float64) string { return fmt.Sprintf("%.2f", f) },
 }
+
 // 首字母大写
 func UCFirst(str string) string {
 	return strings.ToUpper(str[:1]) + str[1:]
-}
-
-// 释放资源文件
-func UnzipAssets(path, ver string, dirs []string, call func(s1, s2 string) error) {
-	if _, err := os.Stat(path); err == nil {
-		if _, err := os.Stat(path + ver + ".ver"); os.IsNotExist(err) {
-			log.Println("[" + ver + "]: Delete Old Assets.")
-			os.RemoveAll(path)
-		} else {
-			log.Println("[" + ver + "]: Assets File Exists.")
-			return
-		}
-	}
-	log.Println("[" + ver + "]: Unpkg Assets.")
-	isSuccess := true
-	for _, dir := range dirs {
-		// 解压dir目录到当前目录
-		if err := call("./", dir); err != nil {
-			isSuccess = false
-			break
-		}
-	}
-	if !isSuccess {
-		for _, dir := range dirs {
-			os.RemoveAll(filepath.Join("./", dir))
-		}
-	}
 }
