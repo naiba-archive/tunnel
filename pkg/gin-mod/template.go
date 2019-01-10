@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"git.cm/naiba/tunnel"
+	"github.com/naiba/tunnel"
 	"github.com/Unknwon/i18n"
 	"github.com/gin-gonic/gin"
 )

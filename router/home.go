@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"git.cm/naiba/tunnel/model"
-	"git.cm/naiba/tunnel/pkg/gin-mod"
+	"github.com/naiba/tunnel/model"
+	"github.com/naiba/tunnel/pkg/gin-mod"
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/com"
 )

@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"time"
 	"io"
-	"git.cm/naiba/tunnel/model"
+	"github.com/naiba/tunnel/model"
 	"github.com/xtaci/kcp-go"
 	"github.com/xtaci/smux"
 )

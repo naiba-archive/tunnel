@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"git.cm/naiba/tunnel"
-	"git.cm/naiba/tunnel/model"
+	"github.com/naiba/tunnel"
+	"github.com/naiba/tunnel/model"
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/com"
 )

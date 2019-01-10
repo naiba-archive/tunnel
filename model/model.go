@@ -8,7 +8,7 @@ package model
 import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	"git.cm/naiba/tunnel"
+	"github.com/naiba/tunnel"
 )
 
 var dbInstance *gorm.DB

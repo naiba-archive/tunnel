@@ -7,12 +7,12 @@ package dashboard
 
 import (
 	"github.com/gin-gonic/gin"
-	"git.cm/naiba/tunnel/pkg/gin-mod"
-	"git.cm/naiba/tunnel/model"
+	"github.com/naiba/tunnel/pkg/gin-mod"
+	"github.com/naiba/tunnel/model"
 	"math/rand"
 	"encoding/json"
 	"errors"
-	"git.cm/naiba/tunnel/tun"
+	"github.com/naiba/tunnel/tun"
 	"sync"
 	"time"
 )

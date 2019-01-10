@@ -8,12 +8,12 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/Unknwon/i18n"
-	"git.cm/naiba/tunnel/router"
-	"git.cm/naiba/tunnel/pkg/gin-mod"
+	"github.com/naiba/tunnel/router"
+	"github.com/naiba/tunnel/pkg/gin-mod"
 	"net/http"
-	"git.cm/naiba/tunnel"
-	"git.cm/naiba/tunnel/router/dashboard"
-	"git.cm/naiba/tunnel/model"
+	"github.com/naiba/tunnel"
+	"github.com/naiba/tunnel/router/dashboard"
+	"github.com/naiba/tunnel/model"
 )
 
 func RunServer() {
